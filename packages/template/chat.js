@@ -10,6 +10,17 @@ const CHAT_COOLDOWN = 400; // milliseconds
 const playerChatCooldown = new Map();
 
 /**
+ * Sanitize message to prevent injection attacks
+ */
+function sanitizeMessage(message) {
+    if (!message || typeof message !== 'string') return '';
+    return message
+        .replace(/[<>]/g, (char) => char === '<' ? '&lt;' : '&gt;')
+        .replace(/!{.*?}/g, '') // Remove color codes
+        .trim();
+}
+
+/**
  * Handle incoming chat messages from clients
  * Validates message and broadcasts to all players
  */
@@ -47,8 +58,13 @@ mp.events.add('server:chatMessage', (player, message) => {
     // Update cooldown
     playerChatCooldown.set(player.id, now);
 
-    // Remove color codes for security (optional)
-    const cleanMessage = message.replace(/!{.*?}/g, '');
+    // Sanitize message for security
+    const cleanMessage = sanitizeMessage(message);
+
+    // Validate cleaned message
+    if (cleanMessage.length === 0) {
+        return;
+    }
 
     // Get player name/username
     const username = player.getVariable('username') || 'Unknown';

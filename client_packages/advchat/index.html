@@ -166,17 +166,26 @@
 
       const sendInput = () => {
         let message = CHAT_INPUT.value.trim();
-        
-        console.log(`[CHAT DEBUG] sendInput called with message: "${message}"`);
 
+        // Remove color codes if setting enabled
         if (settings.removeInputColors)
           message = message.replace(/(?=!{).*(?<=})/g, "");
 
+        // Validate message is not empty after sanitization
         if (message.length < 1) {
-          console.log(`[CHAT DEBUG] Empty message`);
           setChatInputStatus(false);
           return;
         }
+
+        // Prevent excessively long messages
+        if (message.length > settings.maxLength) {
+          message = message.substring(0, settings.maxLength);
+        }
+        // Sanitize message to prevent XSS
+        message = message.replace(/[<>]/g, (char) => {
+          return char === '<' ? '&lt;' : '&gt;';
+        });
+
         const chatNow = new Date();
         if (chatAgain < chatNow) {
           if (message[0] == "/") {
@@ -184,7 +193,6 @@
               setChatInputStatus(false);
               return;
             }
-            console.log(`[CHAT DEBUG] Sending command: ${message}`);
             mp.events.callRemote(
               "server:command",
               settings.lowerCaseCommand
@@ -270,6 +278,7 @@
               if (chatInputStatus) {
                 sendInput();
                 mp.invoke("setLastMessage", new Date().getTime());
+                e.preventDefault();
               }
               break;
 
