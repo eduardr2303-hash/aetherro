@@ -16,7 +16,7 @@ const playerChatCooldown = new Map();
 mp.events.add('server:chatMessage', (player, message) => {
     // Check if player is logged in
     if (!player.getVariable('loggedIn')) {
-        player.outputChatBox('[System] You must be logged in to use chat.');
+        player.call('chat:push', ['[System] You must be logged in to use chat.']);
         return;
     }
 
@@ -27,7 +27,7 @@ mp.events.add('server:chatMessage', (player, message) => {
 
     // Check message length
     if (message.length > MAX_MESSAGE_LENGTH) {
-        player.outputChatBox(`[System] Message is too long (max ${MAX_MESSAGE_LENGTH} characters).`);
+        player.call('chat:push', [`[System] Message is too long (max ${MAX_MESSAGE_LENGTH} characters).`]);
         return;
     }
 
@@ -36,7 +36,7 @@ mp.events.add('server:chatMessage', (player, message) => {
     const lastMessage = playerChatCooldown.get(player.id) || 0;
     
     if (now - lastMessage < CHAT_COOLDOWN) {
-        player.outputChatBox('[System] Please do not spam messages.');
+        player.call('chat:push', ['[System] Please do not spam messages.']);
         return;
     }
 
@@ -55,7 +55,7 @@ mp.events.add('server:chatMessage', (player, message) => {
     
     // Broadcast to all players
     mp.players.forEach(p => {
-        p.outputChatBox(formattedMessage);
+        p.call('chat:push', [formattedMessage]);
     });
 
     // Log to console
@@ -72,7 +72,7 @@ mp.events.add('server:sendSystemMessage', (message) => {
     const systemMessage = `[System] ${message}`;
     
     mp.players.forEach(p => {
-        p.outputChatBox(systemMessage);
+        p.call('chat:push', [systemMessage]);
     });
 
     console.log(systemMessage);
@@ -113,7 +113,7 @@ mp.events.add('server:playerLoggedIn', (player) => {
     const message = `${username} has joined the server.`;
     
     mp.players.forEach(p => {
-        p.outputChatBox(`[Server] ${message}`);
+        p.call('chat:push', [`[Server] ${message}`]);
     });
 
     console.log(`[SERVER] ${message}`);
@@ -129,7 +129,7 @@ mp.events.add('playerQuit', (player) => {
     const message = `${username} has left the server.`;
     
     mp.players.forEach(p => {
-        p.outputChatBox(`[Server] ${message}`);
+        p.call('chat:push', [`[Server] ${message}`]);
     });
 
     // Clean up cooldown
@@ -144,7 +144,7 @@ mp.events.add('playerQuit', (player) => {
 mp.events.add('server:command', (player, command) => {
     // Check if player is logged in
     if (!player.getVariable('loggedIn')) {
-        player.outputChatBox('[System] You must be logged in to use commands.');
+        player.call('chat:push', ['[System] You must be logged in to use commands.']);
         return;
     }
 
@@ -172,7 +172,7 @@ mp.events.add('server:command', (player, command) => {
             player.call('chat:clear');
             break;
         default:
-            player.outputChatBox(`[System] Unknown command: /${cmd}. Type /help for available commands.`);
+            player.call('chat:push', [`[System] Unknown command: /${cmd}. Type /help for available commands.`]);
     }
 });
 
@@ -180,11 +180,11 @@ mp.events.add('server:command', (player, command) => {
  * Show help for available commands
  */
 function showHelpCommand(player) {
-    player.outputChatBox('[System] Available commands:');
-    player.outputChatBox('[System] /help - Show this message');
-    player.outputChatBox('[System] /players - List all online players');
-    player.outputChatBox('[System] /pm <player_id> <message> - Send private message');
-    player.outputChatBox('[System] /clear - Clear chat');
+    player.call('chat:push', ['[System] Available commands:']);
+    player.call('chat:push', ['[System] /help - Show this message']);
+    player.call('chat:push', ['[System] /players - List all online players']);
+    player.call('chat:push', ['[System] /pm <player_id> <message> - Send private message']);
+    player.call('chat:push', ['[System] /clear - Clear chat']);
 }
 
 /**
@@ -192,20 +192,27 @@ function showHelpCommand(player) {
  */
 function handlePrivateMessage(player, args) {
     if (args.length < 3) {
-        player.outputChatBox('[System] Usage: /pm <player_id> <message>');
+        player.call('chat:push', ['[System] Usage: /pm <player_id> <message>']);
         return;
     }
 
     const targetId = parseInt(args[1]);
-    const targetPlayer = mp.players.at(targetId);
+    let targetPlayer = null;
+    
+    // Find player by ID
+    mp.players.forEach(p => {
+        if (p.id === targetId) {
+            targetPlayer = p;
+        }
+    });
 
     if (!targetPlayer) {
-        player.outputChatBox('[System] Player not found.');
+        player.call('chat:push', ['[System] Player not found.']);
         return;
     }
 
     if (targetId === player.id) {
-        player.outputChatBox('[System] You cannot send messages to yourself.');
+        player.call('chat:push', ['[System] You cannot send messages to yourself.']);
         return;
     }
 
@@ -213,8 +220,8 @@ function handlePrivateMessage(player, args) {
     const senderName = player.getVariable('username') || 'Unknown';
     const receiverName = targetPlayer.getVariable('username') || 'Unknown';
 
-    targetPlayer.outputChatBox(`[Private from ${senderName}] ${message}`);
-    player.outputChatBox(`[Private to ${receiverName}] ${message}`);
+    targetPlayer.call('chat:push', [`[Private from ${senderName}] ${message}`]);
+    player.call('chat:push', [`[Private to ${receiverName}] ${message}`]);
 
     console.log(`[PM] ${senderName} -> ${receiverName}: ${message}`);
 }
@@ -224,11 +231,11 @@ function handlePrivateMessage(player, args) {
  */
 function showPlayersCommand(player) {
     const playerCount = mp.players.length;
-    player.outputChatBox(`[System] Online players (${playerCount}):`);
+    player.call('chat:push', [`[System] Online players (${playerCount}):`]);
 
     mp.players.forEach(p => {
         const username = p.getVariable('username') || 'Unknown';
-        player.outputChatBox(`  [${p.id}] ${username}`);
+        player.call('chat:push', [`  [${p.id}] ${username}`]);
     });
 }
 
