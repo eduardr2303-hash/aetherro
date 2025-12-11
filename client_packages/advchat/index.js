@@ -64,8 +64,26 @@ mp.events.add("setLastMessage", (ms) =>
     mp.players.local.lastMessage = ms + 350;
 });
 
+// Chat message receive from server
+mp.events.add("chat:push", (message) =>
+{
+    chat.execute(`chatAPI.push('${message.replace(/'/g, "\\'")}');`);
+});
+
 // Clear chat event, call from server
-mp.events.add("server:clearChat", () =>
+mp.events.add("chat:clear", () =>
 {
     chat.execute(`chatAPI.clear();`);
+});
+
+// Chat activation/deactivation
+mp.events.add("chat:activate", (toggle) =>
+{
+    chat.execute(`chatAPI.activate(${toggle});`);
+});
+
+// Chat show/hide
+mp.events.add("chat:show", (toggle) =>
+{
+    chat.execute(`chatAPI.show(${toggle});`);
 });
