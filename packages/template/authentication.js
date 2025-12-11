@@ -132,6 +132,9 @@ function successLoginHandle(player, handle, username){
     mp.events.call("server:loadAccount", player, username);
     player.call('client:loginHandler', [handle]);
     console.log(`${username} has successfully logged in.`);
+    
+    // Trigger chat notification for successful login
+    mp.events.call('server:playerLoggedIn', player);
 }
 
 //  Sets an idle kick timeout users receive upon joining the server and are waiting to login

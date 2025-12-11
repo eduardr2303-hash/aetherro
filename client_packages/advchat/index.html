@@ -181,14 +181,14 @@
               setChatInputStatus(false);
               return;
             }
-            mp.invoke(
-              "command",
+            mp.events.callRemote(
+              "server:command",
               settings.lowerCaseCommand
                 ? message.lowerCaseFirstWord().substr(1)
                 : message.substr(1)
             );
           } else {
-            mp.invoke("chatMessage", message);
+            mp.events.callRemote("server:chatMessage", message);
           }
 
           inputHistory.unshift(message);
@@ -206,7 +206,7 @@
           CHAR_COUNT.innerText = `0/${settings.maxLength}`;
           setChatInputStatus(false);
           chatAPI.push(
-            '<span style="color: #cc2121;}">[System]</span> Please do not spam messages.'
+            '<span style="color: #cc2121;">[System]</span> Please do not spam messages.'
           );
         }
       };
