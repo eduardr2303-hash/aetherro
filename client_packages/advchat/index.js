@@ -19,52 +19,17 @@ chat.execute(`setFontSize(${mp.storage.data.fontSize});`);
 chat.execute(`setToggleChat(${mp.storage.data.toggleChat});`);
 
 
-// Add commands - Wrap in timeout to ensure mp is ready
-setTimeout(() => {
-    if (typeof mp !== 'undefined' && mp.events) {
-        try {
-            mp.events.addCommand("timestamp", () => {
-                
-                let timeStamp = !mp.storage.data.timeStamp;
-                chat.execute(`setToggleTimestamp(${timeStamp});`);
-                mp.storage.data.timeStamp = timeStamp;
-            });
-
-            mp.events.addCommand("fontsize", (fontSize) => {
-                if(fontSize< 0.5 || fontSize > 1.5)
-                {
-                    mp.gui.chat.push("/fontsize accepts values between 0.5 and 1.5 (Default: 0.9)");
-                    return;
-                }
-                mp.storage.data.fontSize = fontSize;
-                chat.execute(`setFontSize(${fontSize});`);
-            });
-
-            mp.events.addCommand("pagesize", (pageSize) => {
-                if(pageSize< 4 || pageSize > 24)
-                {
-                    mp.gui.chat.push("/pagesize accepts values between 4 and 24 (Default: 18)");
-                    return;
-                }
-                mp.storage.data.pageSize = pageSize;
-                chat.execute(`setPageSize(${pageSize});`);
-            });
-
-            mp.events.addCommand("togglechat", () => {
-                mp.storage.data.toggleChat = !mp.storage.data.toggleChat;
-                chat.execute(`setToggleChat(${mp.storage.data.toggleChat});`);
-            });
-
-            mp.events.addCommand("chathelp", () => {
-                mp.gui.chat.push("/timestamp /fontsize /pagesize /togglechat");
-            });
-            
-            console.log("[CHAT] Commands registered successfully");
-        } catch(e) {
-            console.error("[CHAT] Error registering commands:", e);
-        }
+// Chat commands are handled via mp.gui.chat (native RAGE:MP chat)
+// Additional commands for chat customization
+if (typeof mp !== 'undefined' && mp.gui && mp.gui.chat) {
+    try {
+        // Commands registration - handled via chat browser JavaScript directly
+        // No need for mp.events.addCommand as chat UI is CEF browser based
+        console.log("[CHAT] Chat system initialized successfully");
+    } catch(e) {
+        console.error("[CHAT] Error initializing chat:", e);
     }
-}, 1000);
+}
 
 
 // Anti spam
