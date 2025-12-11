@@ -166,11 +166,14 @@
 
       const sendInput = () => {
         let message = CHAT_INPUT.value.trim();
+        
+        console.log(`[CHAT DEBUG] sendInput called with message: "${message}"`);
 
         if (settings.removeInputColors)
           message = message.replace(/(?=!{).*(?<=})/g, "");
 
         if (message.length < 1) {
+          console.log(`[CHAT DEBUG] Empty message`);
           setChatInputStatus(false);
           return;
         }
@@ -181,6 +184,7 @@
               setChatInputStatus(false);
               return;
             }
+            console.log(`[CHAT DEBUG] Sending command: ${message}`);
             mp.events.callRemote(
               "server:command",
               settings.lowerCaseCommand
@@ -188,6 +192,7 @@
                 : message.substr(1)
             );
           } else {
+            console.log(`[CHAT DEBUG] Sending chat message: ${message}`);
             mp.events.callRemote("server:chatMessage", message);
           }
 

@@ -14,8 +14,12 @@ const playerChatCooldown = new Map();
  * Validates message and broadcasts to all players
  */
 mp.events.add('server:chatMessage', (player, message) => {
+    console.log(`[CHAT DEBUG] Received message from ${player.name}: "${message}"`);
+    console.log(`[CHAT DEBUG] Player logged in: ${player.getVariable('loggedIn')}`);
+    
     // Check if player is logged in
     if (!player.getVariable('loggedIn')) {
+        console.log(`[CHAT DEBUG] Player not logged in!`);
         player.call('chat:push', ['[System] You must be logged in to use chat.']);
         return;
     }

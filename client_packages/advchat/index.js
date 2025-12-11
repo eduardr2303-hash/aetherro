@@ -9,7 +9,7 @@ if(mp.storage.data.toggleChat === undefined)
 
 // Mark chat as active
 mp.gui.chat.show(false);
-const chat = mp.browsers.new('package://advanced-chat/index.html');
+const chat = mp.browsers.new('package://advchat/index.html');
 chat.markAsChat();
 
 // Set Data
