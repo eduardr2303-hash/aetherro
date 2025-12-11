@@ -25,23 +25,27 @@ function sanitizeMessage(message) {
  * Validates message and broadcasts to all players
  */
 mp.events.add('server:chatMessage', (player, message) => {
-    console.log(`[CHAT DEBUG] Received message from ${player.name}: "${message}"`);
-    console.log(`[CHAT DEBUG] Player logged in: ${player.getVariable('loggedIn')}`);
+    console.log(`[CHAT] ===== MESSAGE RECEIVED =====`);
+    console.log(`[CHAT] From: ${player.name} (ID: ${player.id})`);
+    console.log(`[CHAT] Message: "${message}"`);
+    console.log(`[CHAT] Logged in: ${player.getVariable('loggedIn')}`);
     
     // Check if player is logged in
     if (!player.getVariable('loggedIn')) {
-        console.log(`[CHAT DEBUG] Player not logged in!`);
+        console.log(`[CHAT] ❌ NOT LOGGED IN - rejecting message`);
         player.call('chat:push', ['[System] You must be logged in to use chat.']);
         return;
     }
 
     // Validate message
     if (!message || message.trim().length === 0) {
+        console.log(`[CHAT] ❌ EMPTY MESSAGE - rejecting`);
         return;
     }
 
     // Check message length
     if (message.length > MAX_MESSAGE_LENGTH) {
+        console.log(`[CHAT] ❌ MESSAGE TOO LONG: ${message.length}/${MAX_MESSAGE_LENGTH}`);
         player.call('chat:push', [`[System] Message is too long (max ${MAX_MESSAGE_LENGTH} characters).`]);
         return;
     }
@@ -49,14 +53,19 @@ mp.events.add('server:chatMessage', (player, message) => {
     // Check cooldown
     const now = Date.now();
     const lastMessage = playerChatCooldown.get(player.id) || 0;
+    const timeSinceLastMessage = now - lastMessage;
     
-    if (now - lastMessage < CHAT_COOLDOWN) {
+    console.log(`[CHAT] Cooldown check: ${timeSinceLastMessage}ms / ${CHAT_COOLDOWN}ms`);
+    
+    if (timeSinceLastMessage < CHAT_COOLDOWN) {
+        console.log(`[CHAT] ❌ SPAM DETECTED`);
         player.call('chat:push', ['[System] Please do not spam messages.']);
         return;
     }
 
     // Update cooldown
     playerChatCooldown.set(player.id, now);
+    console.log(`[CHAT] ✓ Cooldown updated`);
 
     // Sanitize message for security
     const cleanMessage = sanitizeMessage(message);
@@ -73,12 +82,22 @@ mp.events.add('server:chatMessage', (player, message) => {
     // Format and broadcast message
     const formattedMessage = `${displayName}: ${cleanMessage}`;
     
+    console.log(`[CHAT] Formatted message: "${formattedMessage}"`);
+    console.log(`[CHAT] Broadcasting to ${mp.players.length} players...`);
+    
     // Broadcast to all players
+    let sentCount = 0;
     mp.players.forEach(p => {
-        p.call('chat:push', [formattedMessage]);
+        try {
+            p.call('chat:push', [formattedMessage]);
+            sentCount++;
+        } catch(e) {
+            console.error(`[CHAT] Error sending to ${p.name}:`, e);
+        }
     });
 
     // Log to console
+    console.log(`[CHAT] ✓ Broadcast complete - sent to ${sentCount} players`);
     console.log(`[CHAT] ${displayName}: ${cleanMessage}`);
 });
 
@@ -129,14 +148,24 @@ mp.events.add('playerJoin', (player) => {
  * Should be called after successful authentication
  */
 mp.events.add('server:playerLoggedIn', (player) => {
+    console.log(`[CHAT] Player logged in event - Player: ${player.name} (ID: ${player.id})`);
+    
     const username = player.getVariable('username');
     const message = `${username} has joined the server.`;
     
+    console.log(`[CHAT] Sending join announcement to all players: "${message}"`);
+    
+    let sentCount = 0;
     mp.players.forEach(p => {
-        p.call('chat:push', [`[Server] ${message}`]);
+        try {
+            p.call('chat:push', [`[Server] ${message}`]);
+            sentCount++;
+        } catch(e) {
+            console.error(`[CHAT] Error announcing to ${p.name}:`, e);
+        }
     });
 
-    console.log(`[SERVER] ${message}`);
+    console.log(`[CHAT] ✓ Join announcement sent to ${sentCount} players`);
 });
 
 /**

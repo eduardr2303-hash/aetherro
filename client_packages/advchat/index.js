@@ -1,3 +1,8 @@
+if (typeof mp === 'undefined') {
+    console.error("[CHAT] mp is not defined - Chat system cannot initialize");
+    process.exit(1);
+}
+
 if(mp.storage.data.timeStamp === undefined)
     mp.storage.data.timeStamp = false;
 if(mp.storage.data.pageSize === undefined)
@@ -7,28 +12,47 @@ if(mp.storage.data.fontSize === undefined)
 if(mp.storage.data.toggleChat === undefined)
     mp.storage.data.toggleChat = true;
 
-// Mark chat as active
+console.log("[CHAT] Initializing chat system...");
+
+// Hide native chat and create custom browser
 mp.gui.chat.show(false);
-const chat = mp.browsers.new('package://advchat/index.html');
-chat.markAsChat();
 
-// Set Data
-chat.execute(`setToggleTimestamp(${mp.storage.data.timeStamp});`);
-chat.execute(`setPageSize(${mp.storage.data.pageSize});`);
-chat.execute(`setFontSize(${mp.storage.data.fontSize});`);
-chat.execute(`setToggleChat(${mp.storage.data.toggleChat});`);
-
-
-// Chat commands are handled via mp.gui.chat (native RAGE:MP chat)
-// Additional commands for chat customization
-if (typeof mp !== 'undefined' && mp.gui && mp.gui.chat) {
-    try {
-        // Commands registration - handled via chat browser JavaScript directly
-        // No need for mp.events.addCommand as chat UI is CEF browser based
-        console.log("[CHAT] Chat system initialized successfully");
-    } catch(e) {
-        console.error("[CHAT] Error initializing chat:", e);
+try {
+    const chat = mp.browsers.new('package://advchat/index.html');
+    if (!chat) {
+        console.error("[CHAT] Failed to create browser instance");
+        throw new Error("Browser creation failed");
     }
+    
+    chat.markAsChat();
+    console.log("[CHAT] Browser instance created and marked as chat");
+    
+    // Set Data
+    chat.execute(`setToggleTimestamp(${mp.storage.data.timeStamp});`);
+    chat.execute(`setPageSize(${mp.storage.data.pageSize});`);
+    chat.execute(`setFontSize(${mp.storage.data.fontSize});`);
+    chat.execute(`setToggleChat(${mp.storage.data.toggleChat});`);
+    console.log("[CHAT] Browser settings applied");
+} catch(e) {
+    console.error("[CHAT] Error creating browser:", e);
+}
+
+// Storage for global chat reference
+if (!global.chatBrowser) {
+    global.chatBrowser = null;
+}
+
+function getChatBrowser() {
+    if (!global.chatBrowser) {
+        try {
+            global.chatBrowser = mp.browsers.new('package://advchat/index.html');
+            global.chatBrowser.markAsChat();
+        } catch(e) {
+            console.error("[CHAT] Error getting/creating chat browser:", e);
+            return null;
+        }
+    }
+    return global.chatBrowser;
 }
 
 
@@ -42,23 +66,51 @@ mp.events.add("setLastMessage", (ms) =>
 // Chat message receive from server
 mp.events.add("chat:push", (message) =>
 {
-    chat.execute(`chatAPI.push('${message.replace(/'/g, "\\'")}');`);
+    const chatBrowser = getChatBrowser();
+    if (chatBrowser) {
+        try {
+            chatBrowser.execute(`chatAPI.push('${message.replace(/'/g, "\\'")}');`);
+        } catch(e) {
+            console.error("[CHAT] Error pushing message:", e);
+        }
+    }
 });
 
 // Clear chat event, call from server
 mp.events.add("chat:clear", () =>
 {
-    chat.execute(`chatAPI.clear();`);
+    const chatBrowser = getChatBrowser();
+    if (chatBrowser) {
+        try {
+            chatBrowser.execute(`chatAPI.clear();`);
+        } catch(e) {
+            console.error("[CHAT] Error clearing chat:", e);
+        }
+    }
 });
 
 // Chat activation/deactivation
 mp.events.add("chat:activate", (toggle) =>
 {
-    chat.execute(`chatAPI.activate(${toggle});`);
+    const chatBrowser = getChatBrowser();
+    if (chatBrowser) {
+        try {
+            chatBrowser.execute(`chatAPI.activate(${toggle});`);
+        } catch(e) {
+            console.error("[CHAT] Error activating chat:", e);
+        }
+    }
 });
 
 // Chat show/hide
 mp.events.add("chat:show", (toggle) =>
 {
-    chat.execute(`chatAPI.show(${toggle});`);
+    const chatBrowser = getChatBrowser();
+    if (chatBrowser) {
+        try {
+            chatBrowser.execute(`chatAPI.show(${toggle});`);
+        } catch(e) {
+            console.error("[CHAT] Error showing chat:", e);
+        }
+    }
 });
